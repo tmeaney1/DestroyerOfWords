@@ -3,33 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Word Guess Game</title>
+  <title>𝔻𝕖𝕤𝕥𝕣𝕠𝕪𝕖𝕣 𝕠𝕗 𝕎𝕠𝕣𝕕𝕤</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin: 40px;
-      background-color: #f2f2f2;
+      margin: 0;
+      padding: 40px;
+      background-image: url("images/title-screen.png");
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-attachment: fixed;
+      background-color: #000;
+      color: white;
     }
+
     #word {
       display: flex;
       justify-content: center;
       margin-bottom: 20px;
       gap: 10px;
     }
+
     .letter-box {
       width: 40px;
       height: 40px;
       border: 2px solid #333;
       background-color: #fff;
+      color: black;
       font-size: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
+
     #letter-bank {
       margin-top: 20px;
     }
+
     .letter-button {
       padding: 10px 15px;
       margin: 5px;
@@ -40,18 +52,30 @@
       border: none;
       border-radius: 4px;
     }
+
     .letter-button:disabled {
       background-color: #aaa;
       cursor: not-allowed;
     }
+
     #message {
       margin-top: 20px;
       font-size: 20px;
       color: #d00;
     }
+
     #controls {
       margin-top: 20px;
     }
+
+    #guesses-remaining {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-size: 16px;
+      color: white;
+    }
+
     button {
       margin: 10px;
       padding: 10px 15px;
@@ -60,7 +84,8 @@
   </style>
 </head>
 <body>
-  <h1>Word Guess Game</h1>
+
+  <h1>Destroyer of Words</h1>
   <div id="word"></div>
   <div id="letter-bank"></div>
   <div id="message"></div>
@@ -70,8 +95,12 @@
     <button id="newGameBtn" style="display: none;">New Game</button>
   </div>
 
-  <audio id="winSound" src="sounds/win.mp3" preload="auto"></audio>
+  <div id="guesses-remaining">Guesses remaining: 5</div>
+
+  <!-- Sounds -->
+  <audio id="winSound" src="sounds/win.wav" preload="auto"></audio>
   <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
+  <audio id="correctSound" src="sounds/correct.mp3" preload="auto"></audio>
 
   <script>
     const words = [
@@ -94,6 +123,8 @@
     const hintBtn = document.getElementById("hintBtn");
     const winSound = document.getElementById("winSound");
     const loseSound = document.getElementById("loseSound");
+    const correctSound = document.getElementById("correctSound");
+    const guessesRemainingDisplay = document.getElementById("guesses-remaining");
 
     function startGame() {
       targetWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
@@ -101,6 +132,7 @@
       misses = 0;
       message.textContent = "";
       newGameBtn.style.display = "none";
+      updateGuessesRemaining();
       renderWord();
       renderLetterBank();
     }
@@ -132,16 +164,25 @@
       if (guessedLetters.includes(letter)) return;
       guessedLetters.push(letter);
 
+      console.log("Guessing letter:", letter);
+      console.log("Target word:", targetWord);
+
       if (targetWord.includes(letter)) {
         message.textContent = "";
+        correctSound.play();
       } else {
         misses++;
         message.textContent = "Sorry, try again.";
       }
 
+      updateGuessesRemaining();
       renderWord();
       renderLetterBank();
       checkGameOver();
+    }
+
+    function updateGuessesRemaining() {
+      guessesRemainingDisplay.textContent = `Guesses remaining: ${maxMisses - misses}`;
     }
 
     function checkGameOver() {
@@ -175,7 +216,15 @@
     newGameBtn.addEventListener("click", startGame);
     hintBtn.addEventListener("click", showHint);
 
-    // Start the first game
+    // ✅ Allow typing letters from keyboard
+    document.addEventListener("keydown", (event) => {
+      const key = event.key.toUpperCase();
+      if (key >= "A" && key <= "Z" && !guessedLetters.includes(key)) {
+        handleGuess(key);
+      }
+    });
+
+    // Start game
     startGame();
   </script>
 </body>
