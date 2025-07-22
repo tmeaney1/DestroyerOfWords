@@ -49,6 +49,14 @@
       font-size: 20px;
       color: #d00;
     }
+    #controls {
+      margin-top: 20px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 15px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -57,6 +65,14 @@
   <div id="letter-bank"></div>
   <div id="message"></div>
 
+  <div id="controls">
+    <button id="hintBtn">Hint</button>
+    <button id="newGameBtn" style="display: none;">New Game</button>
+  </div>
+
+  <audio id="winSound" src="sounds/win.mp3" preload="auto"></audio>
+  <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
+
   <script>
     const words = [
       "banana", "jungle", "hiking", "freedom", "picture", "laptop",
@@ -64,7 +80,9 @@
       "monster", "thunder", "journey", "element", "gravity", "sunlight"
     ];
 
-    let targetWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
+    const letterFrequency = "etaoinshrdlucmfwypvbgkjqxz".toUpperCase().split("");
+
+    let targetWord = "";
     let guessedLetters = [];
     let misses = 0;
     const maxMisses = 5;
@@ -72,8 +90,21 @@
     const wordContainer = document.getElementById("word");
     const letterBank = document.getElementById("letter-bank");
     const message = document.getElementById("message");
+    const newGameBtn = document.getElementById("newGameBtn");
+    const hintBtn = document.getElementById("hintBtn");
+    const winSound = document.getElementById("winSound");
+    const loseSound = document.getElementById("loseSound");
 
-    // Render empty letter boxes
+    function startGame() {
+      targetWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
+      guessedLetters = [];
+      misses = 0;
+      message.textContent = "";
+      newGameBtn.style.display = "none";
+      renderWord();
+      renderLetterBank();
+    }
+
     function renderWord() {
       wordContainer.innerHTML = "";
       for (let letter of targetWord) {
@@ -84,7 +115,6 @@
       }
     }
 
-    // Create A-Z buttons
     function renderLetterBank() {
       letterBank.innerHTML = "";
       for (let i = 65; i <= 90; i++) {
@@ -118,21 +148,35 @@
       const allRevealed = [...targetWord].every(l => guessedLetters.includes(l));
       if (allRevealed) {
         message.textContent = "🎉 You win!";
-        disableAllButtons();
+        winSound.play();
+        endGame();
       } else if (misses >= maxMisses) {
         message.textContent = `💀 Game over! The word was: ${targetWord}`;
-        disableAllButtons();
+        loseSound.play();
+        endGame();
       }
     }
 
-    function disableAllButtons() {
+    function endGame() {
       const buttons = document.querySelectorAll(".letter-button");
       buttons.forEach(btn => btn.disabled = true);
+      newGameBtn.style.display = "inline-block";
     }
 
-    // Initialize game
-    renderWord();
-    renderLetterBank();
+    function showHint() {
+      for (let letter of letterFrequency) {
+        if (!guessedLetters.includes(letter)) {
+          message.textContent = `💡 Try guessing "${letter}"`;
+          break;
+        }
+      }
+    }
+
+    newGameBtn.addEventListener("click", startGame);
+    hintBtn.addEventListener("click", showHint);
+
+    // Start the first game
+    startGame();
   </script>
 </body>
 </html>
