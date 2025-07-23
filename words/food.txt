@@ -28,7 +28,6 @@ crumble
 cuisine
 curd
 dessert
-dish
 drink
 eggs
 empanada
@@ -37,16 +36,10 @@ entree
 filet
 fish
 flour
-foie gras
-food
-glaze
-grill
 hamburger
 ice
 juice
 ketchup
-kitchen
-lard
 liquor
 margarine
 marinade
@@ -59,21 +52,14 @@ muffin
 mushroom
 noodle
 nut
-oil
 olive
 omelette
-pan
 pasta
-paste
 pastry
-pie
 pizza
-plate
-pot
 poutine
 pudding
 queso
-raclette
 recipe
 rice
 salad
@@ -83,7 +69,6 @@ sauce
 seasoning
 skillet
 soda
-sopapillas
 soup
 soy
 spice
@@ -102,6 +87,5 @@ waffle
 water
 wheat
 wine
-wok
 yeast
 yogurt

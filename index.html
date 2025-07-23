@@ -5,8 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Destroyer of Words</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/x-icon" href="/images/favicon.png">
-  <style>
+  <link rel="icon" type="image/x-icon" href="favicon.png">
+  
+  <div id="baby-left" class="baby-container">
+  <img src="images/baby.gif">
+  <div class="baby-label"><h1>High success rate!</h1></div>
+</div>
+
+<style>
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -84,6 +90,17 @@
       text-align: left;
     }
 
+    #baby-left {
+  display: none;
+  position: absolute;
+  top: 80px;
+  width: 200px;
+  height: auto;
+}
+    #baby-left {
+      left: 20px;
+    }
+    
     canvas {
       background: black;
       margin-top: 20px;
@@ -108,6 +125,9 @@
     @keyframes flashRank {
       0% { opacity: 1; transform: scale(1); }
       100% { opacity: 0.5; transform: scale(1.2); }
+    }
+     #summary-screen p, #summary-screen h1, #summary-screen .btn {
+      font-size: 2rem;
     }
   </style>
 </head>
@@ -139,18 +159,23 @@
       <button id="newGameBtn" onclick="restartGame()" style="display: none;">New Game</button>
     </div>
     <div id="hud">
-      <div id="guesses-remaining">Guesses remaining: 0</div>
-      <div id="category-label">Category: </div>
-    </div>
+  <div id="guesses-remaining">Guesses remaining: 0</div>
+  <div id="category-label">Category: </div>
+  <div id="rank-display">Rank: </div>
+</div>
+
   </div>
 
   <div id="summary-screen" class="screen">
     <h1>Game Summary</h1>
     <p id="summary-success"></p>
     <p id="summary-remaining"></p>
-    <p id="summary-rank"></p>
+    <p id="summary-rank">Rank: <span id="rank-name" style="opacity: 0;">Destroyer of Words</span></p>
     <div id="rank-message" class="rank-change"></div>
-    <canvas id="rank-graph" width="500" height="200"></canvas>
+    <div id="rank-graph-container" style="display: none; text-align: center;">
+    <canvas id="rank-graph" width="350" height="200"></canvas>
+</div>
+
     <button class="btn" onclick="restartGame()">Play Again</button>
   </div>
 
@@ -177,33 +202,36 @@ let correctGuesses = 0;
 let totalGuesses = 0;
 let usedLetters = new Set();
 
-const wordsByCategory = {
-  condiments: ["mustard", "ketchup", "relish", "sriracha"],
-  food: ["pizza", "taco", "lasagna", "falafel"],
-  ghosts: ["phantom", "banshee", "poltergeist", "specter"],
-  sports: ["soccer", "tennis", "cricket", "football"]
-};
-
-function showScreen(id) {
-  document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  document.getElementById("loadSound").play();
-}
-
-function chooseSkill(skill) {
-  currentSkill = skill;
-  showScreen("category-screen");
-}
+let wordList = [];
+let lastWord = "";
 
 function loadCategory(category) {
   currentCategory = category;
   showScreen("game-screen");
-  startGame();
+
+  fetch(`words/${category}.txt`)
+    .then(response => response.text())
+    .then(text => {
+      wordList = text
+        .split("\n")
+        .map(w => w.trim().toUpperCase())
+        .filter(w => w.length > 0);
+      startGame();
+    })
+    .catch(err => {
+      console.error("Failed to load word list:", err);
+      wordList = ["DEFAULT"];
+      startGame();
+    });
 }
 
 function startGame() {
-  const wordList = wordsByCategory[currentCategory] || ["default"];
-  chosenWord = wordList[Math.floor(Math.random() * wordList.length)].toUpperCase();
+  // Avoid repeating the last word
+  let candidates = wordList.filter(word => word !== lastWord);
+  if (candidates.length === 0) candidates = wordList;
+  chosenWord = candidates[Math.floor(Math.random() * candidates.length)];
+  lastWord = chosenWord;
+
   usedLetters.clear();
   correctGuesses = 0;
   totalGuesses = 0;
@@ -217,6 +245,7 @@ function startGame() {
 
   document.getElementById("category-label").textContent = `Category: ${currentCategory}`;
   document.getElementById("guesses-remaining").textContent = `Guesses remaining: ${guessesRemaining}`;
+  document.getElementById("rank-display").textContent = `Rank: ${ranks[currentRank]}`;
   document.getElementById("word").innerHTML = "";
   document.getElementById("letter-bank").innerHTML = "";
   document.getElementById("message").textContent = "";
@@ -235,6 +264,17 @@ function startGame() {
     btn.onclick = () => guessLetter(btn.textContent);
     document.getElementById("letter-bank").appendChild(btn);
   }
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.getElementById("loadSound").play();
+}
+
+function chooseSkill(skill) {
+  currentSkill = skill;
+  showScreen("category-screen");
 }
 
 function guessLetter(letter) {
@@ -268,6 +308,25 @@ function guessLetter(letter) {
   checkGameStatus();
 }
 
+function useHint() {
+  const messageBox = document.getElementById("message");
+  const remainingLetters = [];
+
+  for (let letter of chosenWord) {
+    if (!usedLetters.has(letter)) {
+      remainingLetters.push(letter);
+    }
+  }
+
+  if (remainingLetters.length === 0) {
+    messageBox.textContent = "No more hints available — you've already guessed everything!";
+    return;
+  }
+
+  const randomLetter = remainingLetters[Math.floor(Math.random() * remainingLetters.length)];
+  messageBox.textContent = `Hint: The word contains the letter "${randomLetter}".`;
+}
+
 function checkGameStatus() {
   if (correctGuesses === chosenWord.length) {
     document.getElementById("winSound").play();
@@ -285,86 +344,13 @@ function checkGameStatus() {
   }
 }
 
-function useHint() {
-  for (let i = 0; i < chosenWord.length; i++) {
-    const letter = chosenWord[i];
-    if (!usedLetters.has(letter)) {
-      guessLetter(letter);
-      break;
-    }
-  }
-}
-
 function restartGame() {
   document.getElementById("summaryMusic").pause();
   document.getElementById("summaryMusic").currentTime = 0;
   document.getElementById("rank-message").textContent = "";
+  document.getElementById("baby-left").style.display = "none";
   showScreen("skill-screen");
-}
-
-function drawGraph(previous, current) {
-  const canvas = document.getElementById("rank-graph");
-  const ctx = canvas.getContext("2d");
-
-  canvas.width = 250;
-  canvas.height = 150;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const icon = "⚔️";
-  const labelY = 40;
-  const iconX = 60;
-  const labelX = 110;
-
-  const yStart = 40;
-  const yEnd = 100;
-
-  let currentY = yStart;
-  const steps = 60;
-  let frame = 0;
-
-  function animate() {
-    frame++;
-    const t = Math.min(frame / steps, 1);
-    currentY = yStart + (yEnd - yStart) * t;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw previous rank
-    ctx.font = "bold 18px monospace";
-    ctx.fillStyle = "white";
-    ctx.textAlign = "left";
-    ctx.fillText(`From: ${ranks[previous]}`, labelX, yStart);
-
-    // Draw current rank
-    ctx.fillText(`To: ${ranks[current]}`, labelX, yEnd);
-
-    // Draw moving icon
-    ctx.font
-
-    // Icon climbing
-    ctx.font = "28px serif";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "gold";
-    ctx.fillText(icon, iconX, currentY);
-
-    // Trail
-    ctx.strokeStyle = "lime";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(iconX, yStart);
-    ctx.lineTo(iconX, currentY);
-    ctx.stroke();
-
-    if (t < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      ctx.fillStyle = "yellow";
-      ctx.font = "bold 18px monospace";
-      ctx.fillText("★", iconX, yEnd - 5);
-    }
-  }
-
-  animate();
+  document.getElementById("rank-display").textContent = `Rank: ${ranks[currentRank]}`;
 }
 
 function showSummaryScreen(correct, total, remaining, won) {
@@ -385,28 +371,44 @@ function showSummaryScreen(correct, total, remaining, won) {
 
   setTimeout(() => {
     document.getElementById("summary-success").textContent = `Success Rate: ${successRate}%`;
-  }, 1000);
+  }, 1333);
 
   setTimeout(() => {
     document.getElementById("summary-remaining").textContent = `Guesses Remaining: ${remaining}`;
-  }, 2000);
+  }, 2666);
+
+ setTimeout(() => {
+  const rankEl = document.getElementById("summary-rank");
+  rankEl.innerHTML = `Rank: <span id="rank-name" style="opacity: 0;"></span>`;
+
+  const rankNameEl = document.getElementById("rank-name");
+  rankNameEl.textContent = ranks[currentRank];
+ 
+  setTimeout(() => {
+    rankNameEl.style.opacity = 1;
+  }, 1333); // This controls the delay after "Rank:" appears
+}, 4000); // This controls when "Rank:" first appears
+
+
+setTimeout(() => {
+  if (currentRank > previousRank) {
+    rankMessage.textContent = "LEVEL UP!";
+    rankMessage.classList.add("pulse");
+  } else if (currentRank < previousRank) {
+    rankMessage.textContent = "DEMOTED!";
+    rankMessage.classList.add("pulse");
+  } else {
+    rankMessage.textContent = "Rank Unchanged.";
+  }
+}, 6666);
 
   setTimeout(() => {
-    const rankEl = document.getElementById("summary-rank");
-    rankEl.textContent = `Rank: ${ranks[currentRank]}`;
-    rankEl.classList.add("pulse");
-  }, 3000);
-
-  setTimeout(() => {
-    drawGraph(previousRank, currentRank);
-    if (currentRank > previousRank) {
-      rankMessage.textContent = "LEVEL UP!";
-    } else if (currentRank < previousRank) {
-      rankMessage.textContent = "DEMOTED!";
-    } else {
-      rankMessage.textContent = "Rank Unchanged.";
+  if (successRate > 80) {
+    document.getElementById("baby-left").style.display = "block";
+   } else {
+    document.getElementById("baby-left").style.display = "none";
     }
-  }, 3500);
+}, 8000);
 }
 
 document.addEventListener("keydown", (e) => {
