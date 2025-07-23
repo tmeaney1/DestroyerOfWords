@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Destroyer of Words</title>
-  <link rel="icon" href="favicon.png" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/images/favicon.png">
   <style>
     body {
       margin: 0;
@@ -12,29 +13,29 @@
       background: url("images/title-screen.png") center center / cover no-repeat fixed;
       color: white;
     }
-
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 6px #000;
+      font-family: 'Press Start 2P', cursive;
+    }
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px #000;
+    }
     .screen {
       display: none;
       padding: 60px 20px;
       text-align: center;
     }
-
     .active {
       display: block;
     }
-
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 20px;
-      text-shadow: 2px 2px 6px #000;
-    }
-
-    .category-btn {
+    .btn {
       display: inline-block;
-      background-color: #007acc;
-      color: white;
-      font-size: 1.5rem;
-      padding: 15px 30px;
+      font-size: 1.3rem;
+      padding: 15px 25px;
       margin: 10px;
       border: none;
       border-radius: 10px;
@@ -42,10 +43,11 @@
       box-shadow: 0 0 10px #000;
       transition: background-color 0.3s;
     }
-
-    .category-btn:hover {
-      background-color: #005fa3;
-    }
+    .btn-acolyte { background-color: green; color: white; }
+    .btn-scribe { background-color: goldenrod; color: white; }
+    .btn-poet { background-color: darkred; color: white; }
+    .btn-death { background-color: black; color: red; }
+    .btn:hover { filter: brightness(1.2); }
 
     .letter-box {
       width: 40px;
@@ -59,7 +61,6 @@
       justify-content: center;
       margin: 5px;
     }
-
     .letter-button {
       padding: 10px 15px;
       margin: 5px;
@@ -70,174 +71,350 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
     .letter-button:disabled {
       background-color: #666;
       cursor: not-allowed;
     }
 
-    #guesses-remaining {
+    #hud {
       position: fixed;
       bottom: 20px;
       left: 20px;
       font-size: 1rem;
+      text-align: left;
+    }
+
+    canvas {
+      background: black;
+      margin-top: 20px;
+    }
+
+    .pulse {
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.2); color: yellow; }
+    }
+
+    .rank-change {
+      font-size: 1.5rem;
+      color: gold;
+      margin-top: 10px;
+      animation: flashRank 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes flashRank {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0.5; transform: scale(1.2); }
     }
   </style>
 </head>
 <body>
-  <!-- Start Screen -->
-  <div id="start-screen" class="screen active">
+  <div id="skill-screen" class="screen active">
     <h1>Destroyer of Words</h1>
-    <p>Choose your category:</p>
-    <div>
-      <button class="category-btn" onclick="loadCategory('condiments')">Condiments</button>
-      <button class="category-btn" onclick="loadCategory('food')">Food</button>
-      <button class="category-btn" onclick="loadCategory('ghosts')">Ghosts</button>
-      <button class="category-btn" onclick="loadCategory('sports')">Sports</button>
-    </div>
+    <h2>Choose your skill level!</h2>
+    <button class="btn btn-acolyte" onclick="chooseSkill('acolyte')">Acolyte</button>
+    <button class="btn btn-scribe" onclick="chooseSkill('scribe')">Scribe</button>
+    <button class="btn btn-poet" onclick="chooseSkill('poet')">Poet Laureate</button>
+    <button class="btn btn-death" onclick="chooseSkill('death')">I Am Become Death</button>
   </div>
 
-  <!-- Game Screen -->
+  <div id="category-screen" class="screen">
+    <h1>Choose your category</h1>
+    <button class="btn" onclick="loadCategory('condiments')">Condiments</button>
+    <button class="btn" onclick="loadCategory('food')">Food</button>
+    <button class="btn" onclick="loadCategory('ghosts')">Ghosts</button>
+    <button class="btn" onclick="loadCategory('sports')">Sports</button>
+  </div>
+
   <div id="game-screen" class="screen">
     <h1>Destroyer of Words</h1>
     <div id="word"></div>
     <div id="letter-bank"></div>
     <div id="message"></div>
     <div>
-      <button id="hintBtn">Hint</button>
-      <button id="newGameBtn" style="display: none;">New Game</button>
+      <button id="hintBtn" onclick="useHint()">Hint</button>
+      <button id="newGameBtn" onclick="restartGame()" style="display: none;">New Game</button>
     </div>
-    <div id="guesses-remaining">Guesses remaining: 5</div>
+    <div id="hud">
+      <div id="guesses-remaining">Guesses remaining: 0</div>
+      <div id="category-label">Category: </div>
+    </div>
   </div>
 
-  <!-- Audio -->
+  <div id="summary-screen" class="screen">
+    <h1>Game Summary</h1>
+    <p id="summary-success"></p>
+    <p id="summary-remaining"></p>
+    <p id="summary-rank"></p>
+    <div id="rank-message" class="rank-change"></div>
+    <canvas id="rank-graph" width="500" height="200"></canvas>
+    <button class="btn" onclick="restartGame()">Play Again</button>
+  </div>
+
   <audio id="winSound" src="sounds/MetalWin.mp3" preload="auto"></audio>
   <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
   <audio id="correctSound" src="sounds/correct.mp3" preload="auto"></audio>
+  <audio id="missSound" src="sounds/miss.mp3" preload="auto"></audio>
+  <audio id="loadSound" src="sounds/load.mp3" preload="auto"></audio>
+  <audio id="summaryMusic" src="sounds/metaltrack.wav" preload="auto" loop></audio>
 
   <script>
-    const maxMisses = 5;
-    const letterFrequency = "etaoinshrdlucmfwypvbgkjqxz".toUpperCase().split("");
-    let targetWord = "";
-    let guessedLetters = [];
-    let misses = 0;
-    let wordList = [];
+const ranks = [
+  "Amateur", "Speller", "Letterhead", "Word Wrangler", "Syntax Sorcerer",
+  "Lexical Knight", "Wordmaster", "Verb Vindicator", "Punisher of Puns",
+  "Vowel Vanquisher", "Alphabet Annihilator", "Destroyer of Words"
+];
 
-    const startScreen = document.getElementById("start-screen");
-    const gameScreen = document.getElementById("game-screen");
-    const wordContainer = document.getElementById("word");
-    const letterBank = document.getElementById("letter-bank");
-    const message = document.getElementById("message");
-    const newGameBtn = document.getElementById("newGameBtn");
-    const hintBtn = document.getElementById("hintBtn");
-    const guessesRemainingDisplay = document.getElementById("guesses-remaining");
-    const winSound = document.getElementById("winSound");
-    const loseSound = document.getElementById("loseSound");
-    const correctSound = document.getElementById("correctSound");
+let currentRank = 0;
+let currentSkill = "acolyte";
+let currentCategory = "";
+let chosenWord = "";
+let guessesRemaining = 0;
+let correctGuesses = 0;
+let totalGuesses = 0;
+let usedLetters = new Set();
 
-    function loadCategory(category) {
-      fetch(`words/${category}.txt`)
-        .then(res => res.text())
-        .then(text => {
-          wordList = text.split(/\r?\n/).map(w => w.trim().toUpperCase()).filter(w => w.length >= 5 && w.length <= 10);
-          startScreen.classList.remove("active");
-          gameScreen.classList.add("active");
-          startGame();
-        })
-        .catch(err => alert("Error loading word list."));
+const wordsByCategory = {
+  condiments: ["mustard", "ketchup", "relish", "sriracha"],
+  food: ["pizza", "taco", "lasagna", "falafel"],
+  ghosts: ["phantom", "banshee", "poltergeist", "specter"],
+  sports: ["soccer", "tennis", "cricket", "football"]
+};
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.getElementById("loadSound").play();
+}
+
+function chooseSkill(skill) {
+  currentSkill = skill;
+  showScreen("category-screen");
+}
+
+function loadCategory(category) {
+  currentCategory = category;
+  showScreen("game-screen");
+  startGame();
+}
+
+function startGame() {
+  const wordList = wordsByCategory[currentCategory] || ["default"];
+  chosenWord = wordList[Math.floor(Math.random() * wordList.length)].toUpperCase();
+  usedLetters.clear();
+  correctGuesses = 0;
+  totalGuesses = 0;
+
+  switch (currentSkill) {
+    case "acolyte": guessesRemaining = 10; break;
+    case "scribe": guessesRemaining = 8; break;
+    case "poet": guessesRemaining = 6; break;
+    case "death": guessesRemaining = 4; break;
+  }
+
+  document.getElementById("category-label").textContent = `Category: ${currentCategory}`;
+  document.getElementById("guesses-remaining").textContent = `Guesses remaining: ${guessesRemaining}`;
+  document.getElementById("word").innerHTML = "";
+  document.getElementById("letter-bank").innerHTML = "";
+  document.getElementById("message").textContent = "";
+
+  for (let letter of chosenWord) {
+    const box = document.createElement("div");
+    box.className = "letter-box";
+    box.textContent = "_";
+    document.getElementById("word").appendChild(box);
+  }
+
+  for (let i = 65; i <= 90; i++) {
+    const btn = document.createElement("button");
+    btn.className = "letter-button";
+    btn.textContent = String.fromCharCode(i);
+    btn.onclick = () => guessLetter(btn.textContent);
+    document.getElementById("letter-bank").appendChild(btn);
+  }
+}
+
+function guessLetter(letter) {
+  if (usedLetters.has(letter)) return;
+  usedLetters.add(letter);
+  totalGuesses++;
+
+  const buttons = document.querySelectorAll(".letter-button");
+  buttons.forEach(btn => {
+    if (btn.textContent === letter) btn.disabled = true;
+  });
+
+  let correct = false;
+  const boxes = document.querySelectorAll(".letter-box");
+  for (let i = 0; i < chosenWord.length; i++) {
+    if (chosenWord[i] === letter) {
+      boxes[i].textContent = letter;
+      correctGuesses++;
+      correct = true;
+    }
+  }
+
+  if (correct) {
+    document.getElementById("correctSound").play();
+  } else {
+    guessesRemaining--;
+    document.getElementById("missSound").play();
+    document.getElementById("guesses-remaining").textContent = `Guesses remaining: ${guessesRemaining}`;
+  }
+
+  checkGameStatus();
+}
+
+function checkGameStatus() {
+  if (correctGuesses === chosenWord.length) {
+    document.getElementById("winSound").play();
+    setTimeout(() => showSummaryScreen(correctGuesses, totalGuesses, guessesRemaining, true), 3000);
+  } else if (guessesRemaining <= 0) {
+    document.getElementById("loseSound").play();
+
+    // Reveal correct word on loss
+    const boxes = document.querySelectorAll(".letter-box");
+    for (let i = 0; i < chosenWord.length; i++) {
+      boxes[i].textContent = chosenWord[i];
     }
 
-    function startGame() {
-      targetWord = wordList[Math.floor(Math.random() * wordList.length)];
-      guessedLetters = [];
-      misses = 0;
-      message.textContent = "";
-      newGameBtn.style.display = "none";
-      updateGuessesRemaining();
-      renderWord();
-      renderLetterBank();
+    setTimeout(() => showSummaryScreen(correctGuesses, totalGuesses, 0, false), 3000);
+  }
+}
+
+function useHint() {
+  for (let i = 0; i < chosenWord.length; i++) {
+    const letter = chosenWord[i];
+    if (!usedLetters.has(letter)) {
+      guessLetter(letter);
+      break;
     }
+  }
+}
 
-    function renderWord() {
-      wordContainer.innerHTML = "";
-      for (let letter of targetWord) {
-        const box = document.createElement("div");
-        box.classList.add("letter-box");
-        box.textContent = guessedLetters.includes(letter) ? letter : "";
-        wordContainer.appendChild(box);
-      }
+function restartGame() {
+  document.getElementById("summaryMusic").pause();
+  document.getElementById("summaryMusic").currentTime = 0;
+  document.getElementById("rank-message").textContent = "";
+  showScreen("skill-screen");
+}
+
+function drawGraph(previous, current) {
+  const canvas = document.getElementById("rank-graph");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = 250;
+  canvas.height = 150;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const icon = "⚔️";
+  const labelY = 40;
+  const iconX = 60;
+  const labelX = 110;
+
+  const yStart = 40;
+  const yEnd = 100;
+
+  let currentY = yStart;
+  const steps = 60;
+  let frame = 0;
+
+  function animate() {
+    frame++;
+    const t = Math.min(frame / steps, 1);
+    currentY = yStart + (yEnd - yStart) * t;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw previous rank
+    ctx.font = "bold 18px monospace";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "left";
+    ctx.fillText(`From: ${ranks[previous]}`, labelX, yStart);
+
+    // Draw current rank
+    ctx.fillText(`To: ${ranks[current]}`, labelX, yEnd);
+
+    // Draw moving icon
+    ctx.font
+
+    // Icon climbing
+    ctx.font = "28px serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "gold";
+    ctx.fillText(icon, iconX, currentY);
+
+    // Trail
+    ctx.strokeStyle = "lime";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(iconX, yStart);
+    ctx.lineTo(iconX, currentY);
+    ctx.stroke();
+
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      ctx.fillStyle = "yellow";
+      ctx.font = "bold 18px monospace";
+      ctx.fillText("★", iconX, yEnd - 5);
     }
+  }
 
-    function renderLetterBank() {
-      letterBank.innerHTML = "";
-      for (let i = 65; i <= 90; i++) {
-        const char = String.fromCharCode(i);
-        const button = document.createElement("button");
-        button.textContent = char;
-        button.classList.add("letter-button");
-        button.disabled = guessedLetters.includes(char);
-        button.addEventListener("click", () => handleGuess(char));
-        letterBank.appendChild(button);
-      }
+  animate();
+}
+
+function showSummaryScreen(correct, total, remaining, won) {
+  document.getElementById("summaryMusic").play();
+  const successRate = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const previousRank = currentRank;
+  const rankMessage = document.getElementById("rank-message");
+
+  currentRank += won ? 1 : -1;
+  currentRank = Math.max(0, Math.min(currentRank, ranks.length - 1));
+
+  document.getElementById("summary-success").textContent = "";
+  document.getElementById("summary-remaining").textContent = "";
+  document.getElementById("summary-rank").textContent = "";
+  rankMessage.textContent = "";
+
+  showScreen("summary-screen");
+
+  setTimeout(() => {
+    document.getElementById("summary-success").textContent = `Success Rate: ${successRate}%`;
+  }, 1000);
+
+  setTimeout(() => {
+    document.getElementById("summary-remaining").textContent = `Guesses Remaining: ${remaining}`;
+  }, 2000);
+
+  setTimeout(() => {
+    const rankEl = document.getElementById("summary-rank");
+    rankEl.textContent = `Rank: ${ranks[currentRank]}`;
+    rankEl.classList.add("pulse");
+  }, 3000);
+
+  setTimeout(() => {
+    drawGraph(previousRank, currentRank);
+    if (currentRank > previousRank) {
+      rankMessage.textContent = "LEVEL UP!";
+    } else if (currentRank < previousRank) {
+      rankMessage.textContent = "DEMOTED!";
+    } else {
+      rankMessage.textContent = "Rank Unchanged.";
     }
+  }, 3500);
+}
 
-    function handleGuess(letter) {
-      if (guessedLetters.includes(letter)) return;
-      guessedLetters.push(letter);
-
-      if (targetWord.includes(letter)) {
-        message.textContent = "";
-        correctSound.play();
-      } else {
-        misses++;
-        message.textContent = "Sorry, try again.";
-      }
-
-      updateGuessesRemaining();
-      renderWord();
-      renderLetterBank();
-      checkGameOver();
-    }
-
-    function checkGameOver() {
-      const allRevealed = [...targetWord].every(l => guessedLetters.includes(l));
-      if (allRevealed) {
-        message.textContent = "🎉 You win!";
-        winSound.play();
-        endGame();
-      } else if (misses >= maxMisses) {
-        message.textContent = `💀 Game over! The word was: ${targetWord}`;
-        loseSound.play();
-        endGame();
-      }
-    }
-
-    function endGame() {
-      document.querySelectorAll(".letter-button").forEach(btn => btn.disabled = true);
-      newGameBtn.style.display = "inline-block";
-    }
-
-    function updateGuessesRemaining() {
-      guessesRemainingDisplay.textContent = `Guesses remaining: ${maxMisses - misses}`;
-    }
-
-    hintBtn.addEventListener("click", () => {
-      for (let letter of letterFrequency) {
-        if (!guessedLetters.includes(letter)) {
-          message.textContent = `💡 Try guessing \"${letter}\"`;
-          break;
-        }
-      }
-    });
-
-    newGameBtn.addEventListener("click", startGame);
-
-    document.addEventListener("keydown", (event) => {
-      const key = event.key.toUpperCase();
-      if (key >= "A" && key <= "Z" && !guessedLetters.includes(key)) {
-        handleGuess(key);
-      }
-    });
-  </script>
+document.addEventListener("keydown", (e) => {
+  const letter = e.key.toUpperCase();
+  if (/^[A-Z]$/.test(letter)) {
+    guessLetter(letter);
+  }
+});
+</script>
 </body>
 </html>
